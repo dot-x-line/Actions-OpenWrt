@@ -8,7 +8,7 @@
 # Description: Build OpenWrt using GitHub Actions
 #
 
-name: backup Build OpenWrt
+name: esir Build OpenWrt
 
 on:
   repository_dispatch:
