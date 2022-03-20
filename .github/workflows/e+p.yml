@@ -75,11 +75,11 @@ jobs:
         REPO_URL: https://github.com/coolsnowwolf/lede
         REPO_BRANCH: master
       run: |
-        git clone --depth 1 $REPO_URL -b $REPO_BRANCH openwrt
+        git clone --depth 1 $REPO_URL -b $REPO_BRANCH lede
 
     - name: Replace Argon & Clone adh + smartdns
       run: |
-        cd openwrt/package/lean && rm -rf luci-theme-argon
+        cd lede/package/lean && rm -rf luci-theme-argon
         git clone -b 18.06 https://github.com/jerrykuku/luci-theme-argon.git luci-theme-argon
         git clone https://github.com/jerrykuku/luci-app-argon-config.git luci-app-argon-config
         git clone https://github.com/rufengsuixing/luci-app-adguardhome.git luci-app-adguardhome
@@ -87,26 +87,27 @@ jobs:
 
     - name: Load custom feeds
       run: |
-        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF openwrt/feeds.conf.default
+        [ -e $FEEDS_CONF ] && mv $FEEDS_CONF lede/feeds.conf.default
         chmod +x $DIY_P1_SH
-        cd openwrt
+        cd lede
         $GITHUB_WORKSPACE/$DIY_P1_SH
 
     - name: Update & Install feeds
-      working-directory: ./openwrt
+      working-directory: ./lede
       run: |
         ./scripts/feeds update -a
         ./scripts/feeds install -a
+        ./scripts/feeds update -a
         ./scripts/feeds install -a
 
     - name: Load custom configuration
       env:
         CONFIG_FILE: '.config'    
       run: |
-        [ -e files ] && mv files openwrt/files
-        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE openwrt/.config
+        [ -e files ] && mv files lede/files
+        [ -e $CONFIG_FILE ] && mv $CONFIG_FILE lede/.config
         chmod +x $DIY_P2_SH
-        cd openwrt && make defconfig
+        cd lede && make defconfig
         $GITHUB_WORKSPACE/$DIY_P2_SH
 
     - name: SSH connection to Actions
@@ -117,14 +118,14 @@ jobs:
         TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         
     - name: Download package
-      working-directory: ./openwrt
+      working-directory: ./lede
       run: |
         make download -j$(nproc)
         find dl -size -1024c -exec ls -l {} \;
         find dl -size -1024c -exec rm -f {} \;
 
     - name: Build firmware
-      working-directory: ./openwrt
+      working-directory: ./lede
       run: |
         echo -e "$(nproc) thread build."
         make -j$(nproc) V=s
@@ -132,5 +133,5 @@ jobs:
     - name : Upload artifact
       uses: actions/upload-artifact@master
       with:
-        name: OpenWrt
-        path: openwrt/bin
+        name: lede
+        path: lede/bin
